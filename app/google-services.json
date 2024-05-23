@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "296393042295",
+    "project_id": "recuperacionpgl-5a657",
+    "storage_bucket": "recuperacionpgl-5a657.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:296393042295:android:f489bab44f9ab3688e9972",
+        "android_client_info": {
+          "package_name": "com.example.recuperacionpgl"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARUXEPC2FK1ozu8tRNXiz2ugMIooOXXn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
