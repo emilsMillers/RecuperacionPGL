@@ -78,5 +78,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation ("io.coil-kt:coil-compose:1.4.0")
-
+    implementation("androidx.compose.ui:ui-test-junit4-android:1.6.7")
+    implementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation("androidx.compose.ui:ui-test-junit4:1.6.7")
 }
