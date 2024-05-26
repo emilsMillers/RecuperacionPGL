@@ -119,7 +119,7 @@ fun LoginScreen(navController: NavController) {
                             }
                         }
                     },
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
                     Text(if (isRegister) "Register" else "Login")
                 }

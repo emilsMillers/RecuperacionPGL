@@ -6,10 +6,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
@@ -20,6 +23,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -34,9 +39,11 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlin.math.max
+import kotlin.math.min
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(navController: NavController) {
     RecuperacionPGLTheme {
@@ -44,11 +51,16 @@ fun MainScreen(navController: NavController) {
         val scope = rememberCoroutineScope()
 
         val tabs = listOf("Results", "Fighters", "Events")
-        var selectedTab by remember { mutableStateOf(2) }
+        val pagerState = rememberPagerState(pageCount = {tabs.size},initialPage = 2)
+
         var searchText by remember { mutableStateOf("796") }
         var year by remember { mutableStateOf("2024") }
         var events by remember { mutableStateOf<List<Event>>(emptyList()) }
         var selectedEventId by remember { mutableStateOf(788) }
+
+        var scale by remember { mutableStateOf(1f) }
+        var offsetX by remember { mutableStateOf(0f) }
+        var offsetY by remember { mutableStateOf(0f) }
 
         ModalNavigationDrawer(
             drawerState = drawerState,
@@ -82,8 +94,8 @@ fun MainScreen(navController: NavController) {
 
                                 IconButton(
                                     onClick = {
-                                        selectedTab = 2
                                         scope.launch {
+                                            pagerState.scrollToPage(2)
                                             events = fetchEvents(year)
                                         }
                                     }
@@ -93,33 +105,60 @@ fun MainScreen(navController: NavController) {
                             }
                         )
                     },
-                    content = {
-                        Column (Modifier.padding(top = 60.dp)){
-
-                            TabRow(selectedTabIndex = selectedTab) {
-                                tabs.forEachIndexed { index, title ->
-                                    Tab(
-                                        text = { Text(title) },
-                                        selected = selectedTab == index,
-                                        onClick = {
-                                            selectedTab = index
-                                        }
-                                    )
-                                }
-                            }
-                            when (selectedTab) {
-                                0 -> ResultsScreen(searchText)
-                                1 -> FightersScreen(selectedEventId)
-                                2 -> EventsScreen(year, events,
-                                    onEventClick = { eventId ->
-                                        searchText = eventId.toString()
-                                        selectedTab = 0
-                                    },
-                                    onEventLongClick = { eventId ->
-                                        selectedEventId = eventId
-                                        selectedTab = 1
+                    content = { paddingValues ->
+                        Box(
+                            modifier = Modifier
+                                .padding(paddingValues)
+                                .fillMaxSize()
+                                .pointerInput(Unit) {
+                                    detectTransformGestures { _, pan, zoom, _ ->
+                                        scale = max(1f, min(scale * zoom, 3f))
                                     }
+                                }
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
                                 )
+                        ) {
+                            Column {
+                                TabRow(
+                                    selectedTabIndex = pagerState.currentPage,
+                                    modifier = Modifier.height(48.dp)
+                                ) {
+                                    tabs.forEachIndexed { index, title ->
+                                        Tab(
+                                            text = { Text(title) },
+                                            selected = pagerState.currentPage == index,
+                                            onClick = {
+                                                scope.launch {
+                                                    pagerState.scrollToPage(index)
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                                HorizontalPager(
+                                    state = pagerState
+                                ) { page ->
+                                    when (page) {
+                                        0 -> ResultsScreen(searchText)
+                                        1 -> FightersScreen(selectedEventId)
+                                        2 -> EventsScreen(year, events,
+                                            onEventClick = { eventId ->
+                                                searchText = eventId.toString()
+                                                scope.launch {
+                                                    pagerState.scrollToPage(0)
+                                                }
+                                            },
+                                            onEventLongClick = { eventId ->
+                                                selectedEventId = eventId
+                                                scope.launch {
+                                                    pagerState.scrollToPage(1)
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -131,6 +170,7 @@ fun MainScreen(navController: NavController) {
         }
     }
 }
+
 
 
 @Composable
