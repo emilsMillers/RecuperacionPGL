@@ -57,11 +57,6 @@ fun MainScreen(navController: NavController) {
         var year by remember { mutableStateOf("2024") }
         var events by remember { mutableStateOf<List<Event>>(emptyList()) }
         var selectedEventId by remember { mutableStateOf(788) }
-
-        var scale by remember { mutableStateOf(1f) }
-        var offsetX by remember { mutableStateOf(0f) }
-        var offsetY by remember { mutableStateOf(0f) }
-
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
@@ -106,21 +101,7 @@ fun MainScreen(navController: NavController) {
                         )
                     },
                     content = { paddingValues ->
-                        Box(
-                            modifier = Modifier
-                                .padding(paddingValues)
-                                .fillMaxSize()
-                                .pointerInput(Unit) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        scale = max(1f, min(scale * zoom, 3f))
-                                    }
-                                }
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                )
-                        ) {
-                            Column {
+                            Column (Modifier.padding(top = 60.dp)){
                                 TabRow(
                                     selectedTabIndex = pagerState.currentPage,
                                     modifier = Modifier.height(48.dp)
@@ -160,7 +141,7 @@ fun MainScreen(navController: NavController) {
                                     }
                                 }
                             }
-                        }
+
                     }
                 )
             }
@@ -326,7 +307,6 @@ fun FightersScreen(eventId: Int) {
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         item {
             FighterDetailsCard(fighterDetails = fighter1Details)
         }
@@ -348,15 +328,24 @@ fun FightersScreen(eventId: Int) {
         }
     }
 }
+fun convertInchesToCm(inches: Double?): String {
+    if (inches == null) return "N/A"
+    val cm = inches * 2.54
+    return String.format("%.2f cm", cm)
+}
 
-
-
+fun convertPoundsToKg(pounds: Double?): String {
+    if (pounds == null) return "N/A"
+    val kg = pounds * 0.453592
+    return String.format("%.2f kg", kg)
+}
 
 @Composable
 fun FighterDetailsCard(fighterDetails: FighterDetails?) {
     val context = LocalContext.current
     var imageUrl by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    var scale by remember { mutableStateOf(1f) }
 
     LaunchedEffect(fighterDetails) {
         fighterDetails?.let {
@@ -371,29 +360,16 @@ fun FighterDetailsCard(fighterDetails: FighterDetails?) {
             .fillMaxWidth()
             .background(color = Color(0xFF4E4E4E))
             .border(width = 1.dp, color = Color(0xFF4B0000))
+            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxHeight(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            imageUrl?.let { url ->
-                Image(
-                    painter = rememberImagePainter(
-                        data = url,
-                        builder = {
-                            crossfade(true)
-                        }
-                    ),
-                    contentDescription = "Fighter Image",
-                    modifier = Modifier
-                        .height(200.dp)
-                        .width(100.dp)
-                )
-            }
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 fighterDetails?.let {
                     Text(
@@ -409,18 +385,17 @@ fun FighterDetailsCard(fighterDetails: FighterDetails?) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "Height: ${it.height ?: "N/A"}",
+                        text = "Height: ${convertInchesToCm(it.height)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "Weight: ${it.weight ?: "N/A"}",
+                        text = "Weight: ${convertPoundsToKg(it.weight)}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "Reach: ${it.reach ?: "N/A"}",
+                        text = "Reach: ${convertInchesToCm(it.reach)}",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    Row {
                         Text(
                             text = "Wins: ${it.wins ?: "N/A"}",
                             style = MaterialTheme.typography.bodySmall,
@@ -438,7 +413,6 @@ fun FighterDetailsCard(fighterDetails: FighterDetails?) {
                             color = Color.Blue,
                             modifier = Modifier.padding(start = 8.dp)
                         )
-                    }
                     Text(
                         text = "No Contests: ${it.noContests ?: "N/A"}",
                         style = MaterialTheme.typography.bodySmall
@@ -455,50 +429,88 @@ fun FighterDetailsCard(fighterDetails: FighterDetails?) {
                         text = "Title Wins: ${it.titleWins ?: "N/A"}",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    it.careerStats?.let { stats ->
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "Career Stats:",
-                                style = MaterialTheme.typography.titleSmall
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically)
+            ) {
+                imageUrl?.let { url ->
+                    Image(
+                        painter = rememberImagePainter(
+                            data = url,
+                            builder = {
+                                crossfade(true)
+                            }
+                        ),
+                        contentDescription = "Fighter Image",
+                        modifier = Modifier
+                            .size(150.dp)
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    scale = max(1f, min(scale * zoom, 3f))
+
+                                }
+                            }
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
                             )
-                            Text(
-                                text = "Sig Strikes Landed Per Minute: ${stats.sigStrikesLandedPerMinute ?: "N/A"}",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Sig Strike Accuracy: ${stats.sigStrikeAccuracy ?: "N/A"}%",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Takedown Average: ${stats.takedownAverage ?: "N/A"}",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Submission Average: ${stats.submissionAverage ?: "N/A"}",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Knockout Percentage: ${stats.knockoutPercentage ?: "N/A"}%",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Technical Knockout Percentage: ${stats.technicalKnockoutPercentage ?: "N/A"}%",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                            Text(
-                                text = "Decision Percentage: ${stats.decisionPercentage ?: "N/A"}%",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
-                            )
-                        }
+                    )
+                }
+            }
+
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                fighterDetails?.careerStats?.let { stats ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Career Stats:",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            text = "Sig Strikes Landed Per Minute: ${stats.sigStrikesLandedPerMinute ?: "N/A"}",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Sig Strike Accuracy: ${stats.sigStrikeAccuracy ?: "N/A"}%",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Takedown Average: ${stats.takedownAverage ?: "N/A"}",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Submission Average: ${stats.submissionAverage ?: "N/A"}",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Knockout Percentage: ${stats.knockoutPercentage ?: "N/A"}%",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Technical Knockout Percentage: ${stats.technicalKnockoutPercentage ?: "N/A"}%",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
+                        Text(
+                            text = "Decision Percentage: ${stats.decisionPercentage ?: "N/A"}%",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
+                        )
                     }
                 }
             }
         }
     }
 }
+
 
 
 
